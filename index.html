@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Calculator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#0f1724;
+      --panel:#0b1220;
+      --glass: rgba(255,255,255,0.04);
+      --muted: #98a2b3;
+      --accent1: #ff7a7a; /* pink */
+      --accent2: #ffb86b; /* orange */
+      --accent3: #7ef6c6; /* mint */
+      --accent4: #8cc7ff; /* blue */
+      --btn-shadow: 0 8px 22px rgba(2,6,23,0.6);
+      font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;background:linear-gradient(180deg,#071020 0%, #0f1724 100%);color:#e6eef6}
+    .wrap{min-height:100%;display:flex;align-items:center;justify-content:center;padding:32px}
+
+    .calculator{
+      width:360px;max-width:96vw;border-radius:18px;padding:20px;background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));box-shadow:var(--btn-shadow);border:1px solid rgba(255,255,255,0.04);
+      backdrop-filter: blur(6px);
+    }
+
+    .top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+    .brand{display:flex;align-items:center;gap:10px}
+    .logo{width:42px;height:42;border-radius:10px;background:linear-gradient(135deg,var(--accent3),var(--accent4));display:grid;place-items:center;color:#021022;font-weight:700}
+    h1{font-size:16px;margin:0}
+    .sub{font-size:12px;color:var(--muted)}
+
+    .display{
+      height:86px;border-radius:12px;padding:14px;display:flex;flex-direction:column;justify-content:center;align-items:flex-end;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border:1px solid rgba(255,255,255,0.03);margin-bottom:14px;position:relative;overflow:hidden
+    }
+    .history{position:absolute;left:14px;top:8px;font-size:12px;color:var(--muted);opacity:.9;max-width:80% ;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .value{font-size:28px;font-weight:700;letter-spacing:0.6px}
+    .subvalue{font-size:14px;color:var(--muted);margin-top:6px}
+
+    .keys{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+    button.key{border:0;padding:16px;border-radius:12px;font-size:18px;font-weight:600;cursor:pointer;box-shadow:var(--btn-shadow);color:#021022}
+    button.key:active{transform:translateY(2px)}
+
+    .key.op{background:linear-gradient(135deg,var(--accent1),var(--accent2));color:#071020}
+    .key.func{background:linear-gradient(135deg,var(--accent3),var(--accent4));color:#021022}
+    .key.num{background:linear-gradient(180deg, rgba(255,255,255,0.95), rgba(255,255,255,0.88)); color:#021022;box-shadow:0 8px 20px rgba(2,6,23,0.15)}
+    .key.zero{grid-column:span 2}
+
+    /* special icons */
+    .small{font-size:13px;color:var(--muted)}
+
+    /* hover glows */
+    .key.op:hover{filter:brightness(1.02)}
+    .key.func:hover{filter:brightness(1.02)}
+    .key.num:hover{filter:brightness(0.98)}
+
+    /* responsive */
+    @media (max-width:420px){ .calculator{width:320px} .display{height:76px} .value{font-size:24px} }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="calculator" role="application" aria-label="Colorful Calculator">
+      <div class="top">
+        <div class="brand">
+          <div class="logo">C</div>
+          
+            <div class="sub">KRISH calculator</div>
+          </div>
+        </div>
+        
+
+      <div class="display" id="display">
+        <div class="history" id="history"></div>
+        <div class="value" id="value">0</div>
+        <div class="subvalue" id="subvalue">&nbsp;</div>
+      </div>
+
+      <div class="keys">
+        <button class="key func" data-action="clear">C</button>
+        <button class="key func" data-action="neg">+/-</button>
+        <button class="key func" data-action="percent">%</button>
+        <button class="key op" data-action="/">÷</button>
+
+        <button class="key num" data-num="7">7</button>
+        <button class="key num" data-num="8">8</button>
+        <button class="key num" data-num="9">9</button>
+        <button class="key op" data-action="*">×</button>
+
+        <button class="key num" data-num="4">4</button>
+        <button class="key num" data-num="5">5</button>
+        <button class="key num" data-num="6">6</button>
+        <button class="key op" data-action="-">−</button>
+
+        <button class="key num" data-num="1">1</button>
+        <button class="key num" data-num="2">2</button>
+        <button class="key num" data-num="3">3</button>
+        <button class="key op" data-action="+">+</button>
+
+        <button class="key num zero" data-num="0">0</button>
+        <button class="key num" data-num=".">.</button>
+        <button class="key op" data-action="=">=</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Calculator logic
+    const valueEl = document.getElementById('value');
+    const subEl = document.getElementById('subvalue');
+    const histEl = document.getElementById('history');
+
+    let current = '0';
+    let previous = null;
+    let operator = null;
+    let waitingForNew = false;
+
+    function updateDisplay(){
+      valueEl.textContent = current;
+      subEl.textContent = operator ? `${previous ?? ''} ${operator}` : '\u00A0';
+      histEl.textContent = '';
+    }
+
+    function inputNumber(n){
+      if(waitingForNew){ current = n === '.' ? '0.' : n; waitingForNew = false; }
+      else if(current === '0' && n !== '.') current = n;
+      else if(n === '.' && current.includes('.')) return;
+      else current = current + n;
+      updateDisplay();
+    }
+
+    function clearAll(){ current = '0'; previous = null; operator = null; waitingForNew = false; updateDisplay(); }
+
+    function applyOperator(op){
+      const c = parseFloat(current);
+      if(previous === null){ previous = c; }
+      else if(operator){
+        previous = compute(previous, operator, c);
+      }
+      operator = op === '=' ? null : op;
+      current = String(previous);
+      waitingForNew = true;
+      updateDisplay();
+    }
+
+    function compute(a, op, b){
+      switch(op){
+        case '+': return a + b;
+        case '-': return a - b;
+        case '*': return a * b;
+        case '/': return b === 0 ? NaN : a / b;
+      }
+      return b;
+    }
+
+    function toggleNeg(){
+      if(current === '0') return;
+      current = String(parseFloat(current) * -1);
+      updateDisplay();
+    }
+
+    function percent(){
+      current = String(parseFloat(current) / 100);
+      updateDisplay();
+    }
+
+    // Button handling
+    document.querySelectorAll('button.key').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const num = btn.dataset.num;
+        const act = btn.dataset.action;
+        if(num !== undefined) inputNumber(num);
+        else if(act) handleAction(act);
+      });
+    });
+
+    function handleAction(act){
+      if(act === 'clear'){ clearAll(); return; }
+      if(act === 'neg'){ toggleNeg(); return; }
+      if(act === 'percent'){ percent(); return; }
+      if(act === '='){ applyOperator('='); return; }
+      // + - * /
+      if(['+','-','*','/'].includes(act)){
+        if(waitingForNew && operator) operator = act; // replace operator
+        else applyOperator(act);
+      }
+    }
+
+    // Keyboard support
+    window.addEventListener('keydown', e=>{
+      if(e.key >= '0' && e.key <= '9') inputNumber(e.key);
+      else if(e.key === '.') inputNumber('.');
+      else if(e.key === 'Enter' || e.key === '=') handleAction('=');
+      else if(e.key === 'Backspace'){
+        if(current.length <= 1) current = '0'; else current = current.slice(0,-1);
+        updateDisplay();
+      }
+      else if(e.key === '+') handleAction('+');
+      else if(e.key === '-') handleAction('-');
+      else if(e.key === '*') handleAction('*');
+      else if(e.key === '/') handleAction('/');
+      else if(e.key === '%') handleAction('percent');
+    });
+
+    // Initialize
+    clearAll();
+  </script>
+</body>
+</html>
